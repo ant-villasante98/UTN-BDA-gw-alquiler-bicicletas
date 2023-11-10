@@ -35,9 +35,9 @@ public class GWConfig {
     public SecurityWebFilterChain filterChain(ServerHttpSecurity http) throws Exception {
         http.authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/api/v1/estaciones/**")
-                        .permitAll()
+                        .hasRole("CLIENTE")
                         .pathMatchers("/api/v1/alquileres/**")
-                        .permitAll()
+                        .hasRole("CLIENTE")
                 ).oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable);
         return http.build();
@@ -57,9 +57,7 @@ public class GWConfig {
         // Se asocia el conversor de Authorities al Bean que convierte el token JWT a un objeto Authorization
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
                 new ReactiveJwtGrantedAuthoritiesConverterAdapter(grantedAuthoritiesConverter));
-        // También se puede cambiar el claim que corresponde al nombre que luego se utilizará en el objeto
-        // Authorization
-        // jwtAuthenticationConverter.setPrincipalClaimName("user_name");
+
 
         return jwtAuthenticationConverter;
     }
