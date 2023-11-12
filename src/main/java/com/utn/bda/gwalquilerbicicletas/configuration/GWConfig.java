@@ -5,6 +5,7 @@ import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
@@ -34,10 +35,24 @@ public class GWConfig {
     @Bean
     public SecurityWebFilterChain filterChain(ServerHttpSecurity http) throws Exception {
         http.authorizeExchange(exchanges -> exchanges
+                // Permisos por roles
+                // Para administradores
+                        .pathMatchers(HttpMethod.POST,"/api/v1/estaciones")
+                        .hasRole("ADMINISTRADOR")
+                        .pathMatchers(HttpMethod.GET,"/api/v1/alquileres")
+                        .hasRole("ADMINISTRADOR")
+                //Para clientes
+                        .pathMatchers(HttpMethod.GET,"/api/v1/estaciones")
+                        .hasRole("CLIENTE")
+                        .pathMatchers(HttpMethod.POST,"/api/v1/alquileres")
+                        .hasRole("CLIENTE")
+                        .pathMatchers(HttpMethod.PATCH,"/api/v1/alquileres/finalizar-alquiler")
+                        .hasRole("CLIENTE")
+                //Para cualquier usuario Autenticado
                         .pathMatchers("/api/v1/estaciones/**")
-                        .hasRole("CLIENTE")
+                        .authenticated()
                         .pathMatchers("/api/v1/alquileres/**")
-                        .hasRole("CLIENTE")
+                        .authenticated()
                 ).oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable);
         return http.build();
@@ -48,13 +63,10 @@ public class GWConfig {
         var jwtAuthenticationConverter = new ReactiveJwtAuthenticationConverter();
         var grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
 
-        // Se especifica el nombre del claim a analizar
         grantedAuthoritiesConverter.setAuthoritiesClaimName("authorities");
 
-        // Se agrega este prefijo en la conversión por una convención de Spring
         grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
 
-        // Se asocia el conversor de Authorities al Bean que convierte el token JWT a un objeto Authorization
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
                 new ReactiveJwtGrantedAuthoritiesConverterAdapter(grantedAuthoritiesConverter));
 
